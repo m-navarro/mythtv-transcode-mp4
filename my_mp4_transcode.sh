@@ -10,7 +10,7 @@
 # fixes file names so that they do not have any illegal characters.
 # passing the second argument as true will replace spaces with underscores
 fixFileName() {
-    NEWNAME=$(echo "$1" | awk -F/ '{print $NF}' | sed 's/://g' | sed 's/?//g' | sed s/"'"/""/g | sed 's/,//g')
+    NEWNAME=$(echo "$1" | sed "s/[^A-Za-z0-9 -_()',]//g")
     if [ ${2:-false} = true ]; then
         NEWNAME=$(echo "$NEWNAME" | sed 's/ /_/g')
     fi
