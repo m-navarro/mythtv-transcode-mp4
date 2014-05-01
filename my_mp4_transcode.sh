@@ -3,6 +3,8 @@
 # From: http://tech.surveypoint.com/blog/mythtv-transcoding-with-handbrake/
 # My MythTV user job to transcode a video to mp4
 
+#------ IF EDITING IN WINDOWS - MAKE SURE EOL IS SET TO UNIX FORMATING ------
+
 # this script expects 2 parameters to identify the recording:
 #   4-digit channel ID
 #   and 14-digit datetime code (YYYYMMDDDHHMMSS)
