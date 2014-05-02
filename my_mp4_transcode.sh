@@ -135,17 +135,33 @@ cd "$OUTDIR"
 echo "============================================================================" >> $LOGFILE
 #exit $?;
 
-# flag the commercials in the MythTV (.mpg) recording: build  a cutlist)
-$INSTALLPREFIX/mythutil --chanid "$1" --starttime "$2" --gencutlist
-# transcode #1: remove the commercials, using the cut list (lossless transcode to MPEG2)
-$INSTALLPREFIX/mythtranscode --chanid "$1" --starttime "$2" --mpeg2 --honorcutlist -o "$MPDIR/$NEWFILENAME.mpg"
+MPGTRANSCODE='$INSTALLPREFIX/mythtranscode --chanid "$1" --starttime "$2" --mpeg2';
+# Determine if the commercials should be cut
+CUTCOMMERCIALS=${3:-false};
+if [ $CUTCOMMERCIALS = true ]; then
+    # flag the commercials in the MythTV (.mpg) recording: build  a cutlist)
+    $INSTALLPREFIX/mythutil --chanid "$1" --starttime "$2" --gencutlist
+    # add the argument to remove the commercials, using the cut list
+    $MPGTRANSCODE+=' --honorcutlist';
+fi
+
+$MPGTRANSCODE+=' -o "$MPDIR/$NEWFILENAME.mpg"';
+# transcode #1: lossless transcode to MPEG2
+$MPGTRANSCODE;
+
 # transcode #2: re-encode the MPEG2 video to MP4, using Handbrake command-line app
-$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$NEWFILENAME.m4v" --audio 1 --aencoder copy:aac --audio-fallback faac --audio-copy-mask aac --large-file --preset="Normal"
+$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.m4v" -a 1,2 -E copy:ac3,copy:aac --audio-fallback faac --audio-copy-mask ac3,aac --large-file --preset="Normal"
+
+echo "Transcode status for '$NEWFILENAME': $?" >> $LOGFILE
+
+# If the transcode process did not fail then move the new m4v file from the temporary directory to OUTDIR
+if [ $? != 0 ]; then
+    echo "Moving file '$MPDIR/$NEWFILENAME.m4v'" >> $LOGFILE
+    mv "$MPDIR/$NEWFILENAME.m4v" "$NEWFILENAME.m4v"
+fi
 
 # delete the temporary working directory
 rm -rf "$MPDIR"
-
-echo "Transcode status for '$NEWFILENAME': $?" >> $LOGFILE
 
 # check if the transcode exited with an error; if not, delete the intermediate MPEG file and map
 if [ $? != 0 ]; then
