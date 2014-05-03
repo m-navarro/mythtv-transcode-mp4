@@ -93,12 +93,12 @@ echo "Episode = '$EPISODE'" >> $LOGFILE
 echo "Show Name = '$SHOWNAME'" >> $LOGFILE
 echo "Episode Name = '$EPISODENAME'" >> $LOGFILE
 
-# create a new output directory under video/[tv_title]. Example: video/game_of_thrones
+# create a new output directory under video/[tv_title]. Example: video/Game of Thrones
 OUTDIR="$VIDEOFOLDER/$SHOWNAME"
 
 # should end up being something like Archer - s05e02 - Archer Vice A Kiss While Dying
-# or if Season and Episode are missing then: Archer - Archer Vice A Kiss While Dying - 1401_20140427203000
-# or if Episode name is missing then: Archer - 1401_20140427203000
+# or if Season and Episode are missing then: Archer - 1401_20140427203000
+# or if Season is missing then: Archer - Archer Vice A Kiss While Dying
 NEWFILENAME="$SHOWNAME"
 
 if [ "$SEASON" != "0" ] || [ "$EPISODE" != "0" ]; then
@@ -135,19 +135,24 @@ cd "$OUTDIR"
 echo "============================================================================" >> $LOGFILE
 #exit $?;
 
-MPGTRANSCODE='$INSTALLPREFIX/mythtranscode --chanid "$1" --starttime "$2" --mpeg2';
+MPGTRANSCODE="$INSTALLPREFIX/mythtranscode --chanid \"$1\" --starttime \"$2\" --mpeg2";
 # Determine if the commercials should be cut
 CUTCOMMERCIALS=${3:-false};
 if [ $CUTCOMMERCIALS = true ]; then
+    echo "Cutting commercials for $NEWFILENAME" >> $LOGFILE
     # flag the commercials in the MythTV (.mpg) recording: build  a cutlist)
     $INSTALLPREFIX/mythutil --chanid "$1" --starttime "$2" --gencutlist
     # add the argument to remove the commercials, using the cut list
-    $MPGTRANSCODE+=' --honorcutlist';
+    MPGTRANSCODE="$MPGTRANSCODE --honorcutlist";
+else
+    echo "NOT Cutting commercials for $NEWFILENAME" >> $LOGFILE
 fi
 
-$MPGTRANSCODE+=' -o "$MPDIR/$NEWFILENAME.mpg"';
+MPGTRANSCODE="$MPGTRANSCODE -o \"$MPDIR/$NEWFILENAME.mpg\"";
+echo "MPGTRANSCODE = $MPGTRANSCODE" >> $LOGFILE
+
 # transcode #1: lossless transcode to MPEG2
-$MPGTRANSCODE;
+eval "$MPGTRANSCODE";
 
 # transcode #2: re-encode the MPEG2 video to MP4, using Handbrake command-line app
 $INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.m4v" -a 1,2 -E copy:ac3,copy:aac --audio-fallback faac --audio-copy-mask ac3,aac --large-file --preset="Normal"
