@@ -155,31 +155,20 @@ echo "MPGTRANSCODE = $MPGTRANSCODE" >> $LOGFILE
 eval "$MPGTRANSCODE";
 
 # transcode #2: re-encode the MPEG2 video to MP4, using Handbrake command-line app
-$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.m4v" -a 1,2 -E copy:ac3,copy:aac --audio-fallback faac --audio-copy-mask ac3,aac --large-file --preset="Normal"
+# old audio parameters: -a 1,2 -E copy:ac3,copy:aac --audio-fallback faac --audio-copy-mask ac3,aac
+$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.mp4" -a 1 -E copy:ac3 --audio-fallback faac --audio-copy-mask ac3 --large-file --preset="Normal"
 
 echo "Transcode status for '$NEWFILENAME': $?" >> $LOGFILE
 
-# If the transcode process did not fail then move the new m4v file from the temporary directory to OUTDIR
+# check if the transcode exited with an error
 if [ $? != 0 ]; then
-    echo "Moving file '$MPDIR/$NEWFILENAME.m4v'" >> $LOGFILE
-    mv "$MPDIR/$NEWFILENAME.m4v" "$NEWFILENAME.m4v"
-fi
-
-# delete the temporary working directory
-rm -rf "$MPDIR"
-
-# check if the transcode exited with an error; if not, delete the intermediate MPEG file and map
-if [ $? != 0 ]; then
-    echo "Error occurred running Handbrake: input=$OUTDIR/$NEWFILENAME.mpg output=$OUTDIR/$NEWFILENAME.m4v" >> $LOGFILE
+    echo "Error occurred running Handbrake: input=$MPDIR/$NEWFILENAME.mpg output=$OUTDIR/$NEWFILENAME.mp4" >> $LOGFILE
 else
-    # only delete the mpg file if there were no errors during the transcoding process.
-    rm "$NEWFILENAME.mpg"
-fi
-
-# always remove the map file
-MAPFILE="$NEWFILENAME.mpg.map"
-if [ -e "$MAPFILE" ]; then
-    rm "$MAPFILE"
+    # If the transcode process did not fail then move the new mp4 file from the temporary directory to OUTDIR
+    echo "Moving file '$MPDIR/$NEWFILENAME.mp4'" >> $LOGFILE
+    mv "$MPDIR/$NEWFILENAME.mp4" "$NEWFILENAME.mp4"
+    # delete the temporary working directory
+    rm -rf "$MPDIR"
 fi
 
 echo "Exit status for '$NEWFILENAME': $?" >> $LOGFILE
