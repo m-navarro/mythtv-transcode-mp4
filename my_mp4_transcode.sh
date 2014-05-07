@@ -10,12 +10,14 @@
 #   and 14-digit datetime code (YYYYMMDDDHHMMSS)
 
 # fixes file names so that they do not have any illegal characters.
-# passing the second argument as true will replace spaces with underscores
+# passing the second argument as true will replace semicolons with underscores
 fixFileName() {
-    NEWNAME=$(echo "$1" | sed "s/[^A-Za-z0-9 -_()',]//g")
+    NEWNAME="$1"
+    # Replace any semicolon with an underscore
     if [ ${2:-false} = true ]; then
-        NEWNAME=$(echo "$NEWNAME" | sed 's/ /_/g')
+        NEWNAME=$(echo "$NEWNAME" | sed 's/:/_/g')
     fi
+    NEWNAME=$(echo "$NEWNAME" | sed "s/[^A-Za-z0-9 _()',.-]//g")
     echo $NEWNAME
 }
 
@@ -42,7 +44,7 @@ LOGFILENAME=$TEMPDIR/log.$NOW
 LOGFILE=$LOGFILENAME.txt
 
 echo $(date +"%m-%d-%Y %r") >> $LOGFILE
-echo "Started transcode for $1_$2" >> $LOGFILE
+echo "Started transcode for $1 $2" >> $LOGFILE
 
 if [ -z "$1" ]; then
     echo "Argument not valid!. Exiting with code: $?" >> $LOGFILE
@@ -68,9 +70,6 @@ echo "select distinct CONCAT(season,';',episode,';',title,';',subtitle) details 
 # run the SQL query and capture the output
 DETAILS=$(mysql --user=$DATABASEUSER --password=$DATABASEPASSWORD mythconverg < $SQL | grep -v details)
 
-# ignore the first line (column heading);  parse only the second line (result)
-#DETAILS=$(sed -n '2,2p' tv-title_$MYPID.txt)
-
 # get the show season and episode numbers using ; as a delimiter
 SEASON=$(echo "$DETAILS" | cut -d';' -f 1)
 EPISODE=$(echo "$DETAILS" | cut -d';' -f 2)
@@ -78,13 +77,14 @@ EPISODE=$(echo "$DETAILS" | cut -d';' -f 2)
 # get the show name using ; as a delimiter
 SHOWNAME=$(echo "$DETAILS" | cut -d';' -f 3)
 SHOWNAME=$(fixFileName "$SHOWNAME")
+# If show name is empty then just set it as Other
 if [ -z "$SHOWNAME" ]; then
     SHOWNAME="Other"
 fi
 
 # get the episode name
 EPISODENAME=$(echo "$DETAILS" | cut -d';' -f 4-)
-EPISODENAME=$(fixFileName "$EPISODENAME")
+EPISODENAME=$(fixFileName "$EPISODENAME" true)
 
 # print the title_subtitle for logging purposes
 echo "Details = '$DETAILS'" >> $LOGFILE
@@ -118,17 +118,25 @@ if [ ! -d "$OUTDIR" ]; then
     #chmod 777 "$OUTDIR"
 fi
 
-# add episode name or chanid and starttime to the end of the filename
+cd "$OUTDIR"
+
+# add episode name or air date to the end of the filename
 if [ ! -z "$EPISODENAME" ]; then
     NEWFILENAME="$NEWFILENAME - $EPISODENAME"
 else
-    NEWFILENAME="$NEWFILENAME - $1_$2"
+    ST=$2
+    # Convert the Start Time UTC into a Date object we can manipulate
+    NEWST=$(date -d "UTC ${ST:0:8} ${ST:8:2}:${ST:10:2}:${ST:12:2}")
+    # Format date so it is month_day_year
+    NEWFILENAME="$NEWFILENAME - "$(date -d "$NEWST" "+%m_%d_%Y")
+    # If the filename already exists then append the Hour, Minute, and Seconds
+    if [ -e "$NEWFILENAME.mp4" ]; then
+        NEWFILENAME="$NEWFILENAME-"$(date -d "$NEWST" "+%I_%M_%S")
+    fi
 fi
 
 echo "Output Directory = '$OUTDIR'" >> $LOGFILE
 echo "New File Name = '$NEWFILENAME'" >> $LOGFILE
-
-cd "$OUTDIR"
 
 # FOR TESTING ONLY
 #echo "Exit status: $?" >> $LOGFILE
