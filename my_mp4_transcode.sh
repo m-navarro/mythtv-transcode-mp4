@@ -10,14 +10,16 @@
 #   and 14-digit datetime code (YYYYMMDDDHHMMSS)
 
 # fixes file names so that they do not have any illegal characters.
-# passing the second argument as true will replace semicolons with underscores
+# passing the second argument as true will replace semicolons with a period
 fixFileName() {
     NEWNAME="$1"
-    # Replace any semicolon with an underscore
+    # Replace any semicolon with a period
     if [ ${2:-false} = true ]; then
-        NEWNAME=$(echo "$NEWNAME" | sed 's/:/_/g')
+        NEWNAME=$(echo "$NEWNAME" | sed 's/:/./g')
     fi
     NEWNAME=$(echo "$NEWNAME" | sed "s/[^A-Za-z0-9 _()',.-]//g")
+    # Reformat A.M. and P.M. to be am and pm
+    NEWNAME=$(echo "$NEWNAME" | sed "s/a.m./am/gI" | sed "s/p.m./pm/gI")
     echo $NEWNAME
 }
 
