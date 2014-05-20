@@ -95,8 +95,10 @@ echo "Episode = '$EPISODE'" >> $LOGFILE
 echo "Show Name = '$SHOWNAME'" >> $LOGFILE
 echo "Episode Name = '$EPISODENAME'" >> $LOGFILE
 
+# Remove period's from the folder name
+FOLDERSHOWNAME=$(echo "$SHOWNAME" | sed 's/[.]//g')
 # create a new output directory under video/[tv_title]. Example: video/Game of Thrones
-OUTDIR="$VIDEOFOLDER/$SHOWNAME"
+OUTDIR="$VIDEOFOLDER/$FOLDERSHOWNAME"
 
 # should end up being something like Archer - s05e02 - Archer Vice A Kiss While Dying
 # or if Season and Episode are missing then: Archer - 1401_20140427203000
