@@ -168,7 +168,7 @@ eval "$MPGTRANSCODE";
 
 # transcode #2: re-encode the MPEG2 video to MP4, using Handbrake command-line app
 # old audio parameters: -a 1,2 -E copy:ac3,copy:aac --audio-fallback faac --audio-copy-mask ac3,aac
-$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.mp4" -a 1 -E copy:ac3 --audio-fallback faac --audio-copy-mask ac3 --large-file --preset="Normal"
+$INSTALLPREFIX/HandBrakeCLI -i "$MPDIR/$NEWFILENAME.mpg" -o "$MPDIR/$NEWFILENAME.mp4" -a 1 -E copy:ac3 --audio-fallback faac --audio-copy-mask ac3 --optimize --preset="Normal"
 
 echo "Transcode status for '$NEWFILENAME': $?" >> $LOGFILE
 
